@@ -3,8 +3,8 @@
 @media (prefers-color-scheme: light) {
   :root {
     --background-color: #f0f0f0;
-    --bar-background-color: #a0a0a0;
-    --drag-background-color: #808080;
+    --bar-background-color: #808080;
+    --drag-background-color: #909090;
     --text-color: #000000;
   }
 }
@@ -37,6 +37,15 @@ body {
   user-select: none;
 }
 
+p {
+  margin: 0.2em 0 0.2em 0;
+}
+
+h2 {
+  text-align: center;
+  margin: 0 0 0.1em 0;
+}
+
 /* Tally Center */
 
 #tally {
@@ -56,16 +65,36 @@ body {
   font-size: min(40vw, 60vh);
 }
 
-/* Top and Bottom */
+/* Bars and Drags */
 
 .drag {
   background-color: var(--drag-background-color);
   height: 3em;
   
+}
+
+.drag-icon-container {
+  height: 3em;
+  width: 100%;
+  position: absolute;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
+}
+
+.info {
+  height: 3em;
+  width: 50px;
+  position: absolute;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.info-icon {
+  transform: scale(1.5);
 }
 
 .drag-icon {
@@ -73,14 +102,11 @@ body {
 }
 
 .bar {
+  position: absolute;
   background-color: var(--bar-background-color);
   width: 100%;
 }
 
-#top {
-  position: absolute;
-}
-
-#bottom {
-  position: absolute;
+.content {
+  padding: 8px;
 }

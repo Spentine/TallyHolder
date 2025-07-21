@@ -5,8 +5,13 @@ function main() {
   
   const topBar = document.getElementById("top");
   const bottomBar = document.getElementById("bottom");
+  const tallyElement = document.getElementById("tally");
+  const countElement = document.getElementById("tally-count");
   
   // variables
+  
+  let tallyCount = 0;
+  let tallyIncrement = 1; // default increment value
   
   const barPositions = {
     top: {
@@ -60,13 +65,14 @@ function main() {
     bottomBar.style.top = `${barPositions.bottom.current}px`;
   }
   
-  function addBarInteractivity() {
+  function addInteractivity() {
     // mouse
     let dragType = null;
     let dragOriginalStatus = null;
     let dragStartTime = null;
     let draggedBar = null;
     let relativeY = null;
+    let swipeStartY = null;
     function mouseDown(event, type="mouse") {
       // get current bar positions
       const topBarTop = barPositions.top.current;
@@ -83,7 +89,12 @@ function main() {
         draggedBar = null;
       }
       
-      if (draggedBar === null) return;
+      // tally functionality
+      if (draggedBar === null) {
+        swipeStartY = event.clientY;
+        dragStartTime = Date.now();
+        return; // not dragging a bar, just return
+      };
       
       // get relative Y position
       if (draggedBar === "top") {
@@ -124,11 +135,43 @@ function main() {
      *   it will set the bar status to open or closed depending on the position
      */
     function mouseUp(event, type="mouse") {
-      if (draggedBar === null) return;
+      // tally functionality
+      if (draggedBar === null) {
+        if (swipeStartY === null) return;
+        
+        const swipeEndY = event.clientY;
+        const swipeDuration = Date.now() - dragStartTime;
+        
+        if (type === "mouse" && swipeDuration < 5) {
+          // broken browser behavior, just ignore
+          return;
+        }
+        
+        // check if it was a click
+        if (swipeDuration < 200 && Math.abs(swipeEndY - swipeStartY) < 10) {
+          tallyCount += tallyIncrement;
+          countElement.textContent = tallyCount;
+          return;
+        }
+        
+        // check if it was a swipe up or down
+        if (swipeEndY < swipeStartY + 10) {
+          // swipe up
+          tallyCount += tallyIncrement;
+        } else {
+          // swipe down
+          tallyCount -= tallyIncrement;
+        }
+        
+        countElement.textContent = tallyCount;
+        
+        swipeStartY = null; // reset
+        return; // not dragging a bar, just return
+      };
       if (dragType !== type) return; // only allow dragging if the type matches
       
       const dragDuration = Date.now() - dragStartTime;
-      if (type === "mouse" && dragDuration === 0) { // broken browser behavior
+      if (type === "mouse" && dragDuration < 5) { // broken browser behavior
         // untoggle the mouse toggle
         barPositions[draggedBar].status = dragOriginalStatus;
       } else if (dragDuration < 200) { // quick drag
@@ -170,7 +213,7 @@ function main() {
       }
     }
     function touchDrag(event) {
-      if (event.touches.length > 0 && draggedBar !== null) {
+      if (event.touches.length > 0) {
         const touch = event.touches[0];
         const mouseEvent = new MouseEvent("mousemove", {
           clientX: touch.clientX,
@@ -180,14 +223,12 @@ function main() {
       }
     }
     function touchUp(event) {
-      if (draggedBar !== null) {
-        const touch = event.changedTouches[0];
-        const mouseEvent = new MouseEvent("mouseup", {
-          clientX: touch.clientX,
-          clientY: touch.clientY
-        });
-        mouseUp(mouseEvent, "touch");
-      }
+      const touch = event.changedTouches[0];
+      const mouseEvent = new MouseEvent("mouseup", {
+        clientX: touch.clientX,
+        clientY: touch.clientY
+      });
+      mouseUp(mouseEvent, "touch");
     }
     document.addEventListener("touchstart", touchDown);
     document.addEventListener("touchmove", touchDrag);
@@ -229,8 +270,9 @@ function main() {
   barPositions.top.current = barPositions.top.closedPosition;
   barPositions.bottom.current = barPositions.bottom.closedPosition;
   requestAnimationFrame(renderLoop);
+  countElement.textContent = tallyCount;
   
-  addBarInteractivity();
+  addInteractivity();
 }
 
 if (document.readyState === "loading") {
