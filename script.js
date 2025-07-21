@@ -8,6 +8,7 @@ function main() {
   const tallyElement = document.getElementById("tally");
   const countElement = document.getElementById("tally-count");
   const countInput = document.getElementById("countInput");
+  const incrementInput = document.getElementById("incrementInput");
   
   // variables
   
@@ -274,13 +275,23 @@ function main() {
     document.addEventListener("touchend", touchUp);
     
     // add interactivity for inputs
+    
     countInput.addEventListener("change", (event) => {
-      const value = parseInt(event.target.value, 10);
+      const value = parseFloat(event.target.value, 10);
       if (!isNaN(value)) {
         tallyCount = value;
         updateCount(tallyCount);
       } else {
         updateCount(tallyCount); // reset to current count if invalid input
+      }
+    });
+    
+    incrementInput.addEventListener("change", (event) => {
+      const value = parseFloat(event.target.value, 10);
+      if (!isNaN(value) && value > 0) {
+        tallyIncrement = value;
+      } else {
+        incrementInput.value = tallyIncrement;
       }
     });
   }
@@ -294,7 +305,7 @@ function main() {
     getPositions();
     
     // frame rate correction
-    const portion = 1 - Math.pow(0.001, (1/fps));
+    const portion = 1 - Math.pow(0.00001, (1/fps));
     
     const tween = function(current, target, portion) {
       return current * (1 - portion) + target * portion;
