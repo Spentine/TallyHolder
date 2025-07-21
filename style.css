@@ -5,7 +5,9 @@
     --background-color: #f0f0f0;
     --bar-background-color: #808080;
     --drag-background-color: #909090;
+    --input-background-color: #909090;
     --text-color: #000000;
+    --hr-color: #d0d0d0;
   }
 }
 
@@ -14,7 +16,9 @@
     --background-color: #202020;
     --bar-background-color: #303030;
     --drag-background-color: #404040;
+    --input-background-color: #404040;
     --text-color: #ffffff;
+    --hr-color: #505050;
   }
 }
 
@@ -44,6 +48,18 @@ p {
 h2 {
   text-align: center;
   margin: 0 0 0.1em 0;
+}
+
+hr {
+  border: 2px solid var(--hr-color);
+  margin: 1em 0;
+}
+
+input {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background-color: var(--input-background-color);
 }
 
 /* Tally Center */

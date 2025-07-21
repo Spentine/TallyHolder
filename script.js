@@ -7,6 +7,7 @@ function main() {
   const bottomBar = document.getElementById("bottom");
   const tallyElement = document.getElementById("tally");
   const countElement = document.getElementById("tally-count");
+  const countInput = document.getElementById("countInput");
   
   // variables
   
@@ -65,6 +66,12 @@ function main() {
     bottomBar.style.top = `${barPositions.bottom.current}px`;
   }
   
+  function updateCount(count) {
+    tallyCount = count;
+    countElement.textContent = tallyCount;
+    countInput.value = tallyCount;
+  }
+  
   function addInteractivity() {
     // mouse
     let dragType = null;
@@ -75,32 +82,40 @@ function main() {
     let swipeStartY = null;
     function mouseDown(event, type="mouse") {
       // get current bar positions
-      const topBarTop = barPositions.top.current;
-      const topBarBottom = topBarTop + barPositions.top.height;
+      const topBarTop = (
+        barPositions.top.current +
+        barPositions.top.height -
+        barPositions.top.dragHeight
+      );
+      const topBarBottom = barPositions.top.current + barPositions.top.height;
       const bottomBarTop = barPositions.bottom.current;
-      const bottomBarBottom = bottomBarTop + barPositions.bottom.height;
+      const bottomBarBottom = bottomBarTop + barPositions.bottom.dragHeight;
       
       // check which bar was clicked
       if (event.clientY >= topBarTop && event.clientY <= topBarBottom) {
         draggedBar = "top";
       } else if (event.clientY >= bottomBarTop && event.clientY <= bottomBarBottom) {
         draggedBar = "bottom";
+      } else if (event.clientY >= topBarBottom && event.clientY <= bottomBarTop) {
+        draggedBar = "tally"; // not dragging a bar, just tally functionality
       } else {
-        draggedBar = null;
+        draggedBar = null; // not dragging a bar
       }
       
       // tally functionality
-      if (draggedBar === null) {
+      if (draggedBar === "tally") {
         swipeStartY = event.clientY;
         dragStartTime = Date.now();
-        return; // not dragging a bar, just return
-      };
+        return;
+      }
+      
+      if (draggedBar === null) return;
       
       // get relative Y position
       if (draggedBar === "top") {
-        relativeY = event.clientY - topBarTop;
+        relativeY = event.clientY - barPositions.top.current;
       } else if (draggedBar === "bottom") {
-        relativeY = event.clientY - bottomBarTop;
+        relativeY = event.clientY - barPositions.bottom.current;
       }
       
       dragOriginalStatus = barPositions[draggedBar].status;
@@ -110,7 +125,8 @@ function main() {
       barPositions[draggedBar].status = null;
     }
     function mouseDrag(event, type="mouse") {
-      if (draggedBar === null) return;
+      if (draggedBar === "tally") return;
+      if (draggedBar === null) return; // not dragging a bar
       if (dragType !== type) return; // only allow dragging if the type matches
       // get min and max positions
       const min = Math.min(
@@ -135,8 +151,10 @@ function main() {
      *   it will set the bar status to open or closed depending on the position
      */
     function mouseUp(event, type="mouse") {
+      if (draggedBar === null) return; // not dragging a bar
+      
       // tally functionality
-      if (draggedBar === null) {
+      if (draggedBar === "tally") {
         if (swipeStartY === null) return;
         
         const swipeEndY = event.clientY;
@@ -163,7 +181,7 @@ function main() {
           tallyCount -= tallyIncrement;
         }
         
-        countElement.textContent = tallyCount;
+        updateCount(tallyCount);
         
         swipeStartY = null; // reset
         return; // not dragging a bar, just return
@@ -233,6 +251,17 @@ function main() {
     document.addEventListener("touchstart", touchDown);
     document.addEventListener("touchmove", touchDrag);
     document.addEventListener("touchend", touchUp);
+    
+    // add interactivity for inputs
+    countInput.addEventListener("change", (event) => {
+      const value = parseInt(event.target.value, 10);
+      if (!isNaN(value)) {
+        tallyCount = value;
+        updateCount(tallyCount);
+      } else {
+        updateCount(tallyCount); // reset to current count if invalid input
+      }
+    });
   }
   
   let lastFrame = Date.now();
@@ -273,12 +302,15 @@ function main() {
 
     positionBars();
     requestAnimationFrame(renderLoop);
+    
+    window.scrollTo(0, 0); // prevent scrolling
   }
   getPositions();
+  console.log("Bar positions:", barPositions);
   barPositions.top.current = barPositions.top.closedPosition;
   barPositions.bottom.current = barPositions.bottom.closedPosition;
   requestAnimationFrame(renderLoop);
-  countElement.textContent = tallyCount;
+  updateCount(tallyCount);
   
   addInteractivity();
 }
