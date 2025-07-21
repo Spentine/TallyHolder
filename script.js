@@ -235,8 +235,16 @@ function main() {
     document.addEventListener("touchend", touchUp);
   }
   
+  let lastFrame = Date.now();
+  
   function renderLoop() {
+    const fps = 1 / (Date.now() - lastFrame) * 1000;
+    lastFrame = Date.now();
+    
     getPositions();
+    
+    // frame rate correction
+    const portion = 1 - Math.pow(0.001, (1/fps));
     
     const tween = function(current, target, portion) {
       return current * (1 - portion) + target * portion;
@@ -250,7 +258,7 @@ function main() {
       target = barPositions.top.openPosition;
     }
     if (barPositions.top.status !== null) {
-      barPositions.top.current = tween(barPositions.top.current, target, 0.1);
+      barPositions.top.current = tween(barPositions.top.current, target, portion);
     }
     
     target = null;
@@ -260,7 +268,7 @@ function main() {
       target = barPositions.bottom.openPosition;
     }
     if (barPositions.bottom.status !== null) {
-      barPositions.bottom.current = tween(barPositions.bottom.current, target, 0.1);
+      barPositions.bottom.current = tween(barPositions.bottom.current, target, portion);
     }
 
     positionBars();
