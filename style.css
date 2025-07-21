@@ -64,8 +64,14 @@ body {
   justify-content: center;
 }
 
+.drag-icon {
+  transform: scale(2);
+  margin: 0.5em;
+}
+
 .bar {
   background-color: var(--bar-background-color);
+  width: 100%;
 }
 
 #top {
