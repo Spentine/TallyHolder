@@ -62,9 +62,12 @@ function main() {
   
   function addBarInteractivity() {
     // mouse
+    let dragType = null;
+    let dragOriginalStatus = null;
+    let dragStartTime = null;
     let draggedBar = null;
     let relativeY = null;
-    function mouseDown(event) {
+    function mouseDown(event, type="mouse") {
       // get current bar positions
       const topBarTop = barPositions.top.current;
       const topBarBottom = topBarTop + barPositions.top.height;
@@ -79,7 +82,8 @@ function main() {
       } else {
         draggedBar = null;
       }
-      console.log(draggedBar);
+      
+      if (draggedBar === null) return;
       
       // get relative Y position
       if (draggedBar === "top") {
@@ -87,10 +91,16 @@ function main() {
       } else if (draggedBar === "bottom") {
         relativeY = event.clientY - bottomBarTop;
       }
+      
+      dragOriginalStatus = barPositions[draggedBar].status;
+      dragStartTime = Date.now();
+      dragType = type;
+      
       barPositions[draggedBar].status = null;
     }
-    function mouseDrag(event) {
+    function mouseDrag(event, type="mouse") {
       if (draggedBar === null) return;
+      if (dragType !== type) return; // only allow dragging if the type matches
       // get min and max positions
       const min = Math.min(
         barPositions[draggedBar].closedPosition,
@@ -106,29 +116,82 @@ function main() {
         max
       );
     }
-    function mouseUp(event) {
-      const currentPosition = barPositions[draggedBar].current;
+    /**
+     * this will have interesting functionality
+     * if the amount of time the bar was dragged is less than 200ms:
+     *   it will toggle the bar status
+     * if the amount of time is more than 200ms:
+     *   it will set the bar status to open or closed depending on the position
+     */
+    function mouseUp(event, type="mouse") {
+      if (draggedBar === null) return;
+      if (dragType !== type) return; // only allow dragging if the type matches
       
-      // check if the bar is more open or closed
-      const openPosition = barPositions[draggedBar].openPosition;
-      const closedPosition = barPositions[draggedBar].closedPosition;
-      
-      // get distances
-      const distanceToOpen = Math.abs(currentPosition - openPosition);
-      const distanceToClosed = Math.abs(currentPosition - closedPosition);
-      
-      if (distanceToOpen < distanceToClosed) {
-        barPositions[draggedBar].status = "open";
-      } else {
-        barPositions[draggedBar].status = "closed";
+      const dragDuration = Date.now() - dragStartTime;
+      if (type === "mouse" && dragDuration === 0) { // broken browser behavior
+        // untoggle the mouse toggle
+        barPositions[draggedBar].status = dragOriginalStatus;
+      } else if (dragDuration < 200) { // quick drag
+        barPositions[draggedBar].status = dragOriginalStatus === "open" ? "closed" : "open";
+      } else { // long drag
+        const currentPosition = barPositions[draggedBar].current;
+        
+        // check if the bar is more open or closed
+        const openPosition = barPositions[draggedBar].openPosition;
+        const closedPosition = barPositions[draggedBar].closedPosition;
+        
+        // get distances
+        const distanceToOpen = Math.abs(currentPosition - openPosition);
+        const distanceToClosed = Math.abs(currentPosition - closedPosition);
+        
+        if (distanceToOpen < distanceToClosed) {
+          barPositions[draggedBar].status = "open";
+        } else {
+          barPositions[draggedBar].status = "closed";
+        }
       }
       
       draggedBar = null;
     }
-    
     document.addEventListener("mousedown", mouseDown);
     document.addEventListener("mousemove", mouseDrag);
     document.addEventListener("mouseup", mouseUp);
+    
+    // touch (temporary one finger only touch)
+    // it just forwards it to the mouse events
+    function touchDown(event) {
+      if (event.touches.length > 0) {
+        const touch = event.touches[0];
+        const mouseEvent = new MouseEvent("mousedown", {
+          clientX: touch.clientX,
+          clientY: touch.clientY
+        });
+        mouseDown(mouseEvent, "touch");
+      }
+    }
+    function touchDrag(event) {
+      if (event.touches.length > 0 && draggedBar !== null) {
+        const touch = event.touches[0];
+        const mouseEvent = new MouseEvent("mousemove", {
+          clientX: touch.clientX,
+          clientY: touch.clientY
+        });
+        mouseDrag(mouseEvent, "touch");
+      }
+    }
+    function touchUp(event) {
+      if (draggedBar !== null) {
+        const touch = event.changedTouches[0];
+        const mouseEvent = new MouseEvent("mouseup", {
+          clientX: touch.clientX,
+          clientY: touch.clientY
+        });
+        mouseUp(mouseEvent, "touch");
+      }
+    }
+    document.addEventListener("touchstart", touchDown);
+    document.addEventListener("touchmove", touchDrag);
+    document.addEventListener("touchend", touchUp);
   }
   
   function renderLoop() {
