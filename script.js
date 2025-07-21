@@ -33,10 +33,17 @@ function main() {
     }
   }
   
+  const getWidth = function() {
+    return document.body.clientWidth || window.innerWidth;
+  };
+  const getHeight = function() {
+    return document.body.clientHeight || window.innerHeight;
+  };
+  
   function getPositions() {
     // get viewport height
-    const viewportHeight = window.innerHeight;
-    
+    const viewportHeight = getHeight();
+
     // get rects
     const topBarRect = topBar.getBoundingClientRect();
     const bottomBarRect = bottomBar.getBoundingClientRect();
@@ -66,10 +73,26 @@ function main() {
     bottomBar.style.top = `${barPositions.bottom.current}px`;
   }
   
+  function resizeCount() {
+    // resize text to fit screen
+    const countWidth = countElement.getBoundingClientRect().width;
+    const viewportWidth = getWidth();
+    const viewportHeight = getHeight();
+    const widthRatio = viewportWidth / countWidth;
+    const currentFontSize = parseFloat(getComputedStyle(countElement).fontSize);
+    const newFontSize = Math.min(
+      currentFontSize * widthRatio,
+      viewportWidth * 0.8,
+      viewportHeight * 0.6
+    );
+    countElement.style.fontSize = `${newFontSize}px`;
+  }
+  
   function updateCount(count) {
     tallyCount = count;
     countElement.textContent = tallyCount;
     countInput.value = tallyCount;
+    resizeCount();
   }
   
   function addInteractivity() {
@@ -168,17 +191,15 @@ function main() {
         // check if it was a click
         if (swipeDuration < 200 && Math.abs(swipeEndY - swipeStartY) < 10) {
           tallyCount += tallyIncrement;
-          countElement.textContent = tallyCount;
-          return;
-        }
-        
-        // check if it was a swipe up or down
-        if (swipeEndY < swipeStartY + 10) {
-          // swipe up
-          tallyCount += tallyIncrement;
         } else {
-          // swipe down
-          tallyCount -= tallyIncrement;
+          // check if it was a swipe up or down
+          if (swipeEndY < swipeStartY + 10) {
+            // swipe up
+            tallyCount += tallyIncrement;
+          } else {
+            // swipe down
+            tallyCount -= tallyIncrement;
+          }
         }
         
         updateCount(tallyCount);
@@ -299,6 +320,8 @@ function main() {
     if (barPositions.bottom.status !== null) {
       barPositions.bottom.current = tween(barPositions.bottom.current, target, portion);
     }
+    
+    resizeCount();
 
     positionBars();
     requestAnimationFrame(renderLoop);
@@ -306,7 +329,6 @@ function main() {
     window.scrollTo(0, 0); // prevent scrolling
   }
   getPositions();
-  console.log("Bar positions:", barPositions);
   barPositions.top.current = barPositions.top.closedPosition;
   barPositions.bottom.current = barPositions.bottom.closedPosition;
   requestAnimationFrame(renderLoop);

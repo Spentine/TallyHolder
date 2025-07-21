@@ -30,6 +30,9 @@ html, body {
 }
 
 body {
+  width: 100vw;
+  height: 100vh;
+  
   background-color: var(--background-color);
   color: var(--text-color);
   font-family: Signika, Arial, sans-serif;
@@ -78,7 +81,7 @@ input {
 }
 
 #tally-count {
-  font-size: min(40vw, 60vh);
+  font-size: min(80vw, 60vh);
 }
 
 /* Bars and Drags */
