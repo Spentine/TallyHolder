@@ -17,13 +17,14 @@ function newLocalStorageSettings(settings={
 }) {
   const storage = localStorage.getItem("tallyHolder");
   const storageObject = JSON.parse(storage);
+  const tallies = storageObject.tallies;
   const id = generateRandomId();
   
   if (settings.name === null) {
     settings.name = "Tally " + id.substring(0, 6);
   }
-  
-  storageObject[id] = settings;
+
+  tallies[id] = settings;
   localStorage.setItem("tallyHolder", JSON.stringify(storageObject));
   return id;
 }
@@ -31,44 +32,60 @@ function newLocalStorageSettings(settings={
 function deleteTally(id) {
   const storage = localStorage.getItem("tallyHolder");
   const storageObject = JSON.parse(storage);
-  if (!storageObject.hasOwnProperty(id)) {
+  const tallies = storageObject.tallies;
+  if (!tallies.hasOwnProperty(id)) {
     return false; // invalid id
   }
-  delete storageObject[id];
+  delete tallies[id];
   localStorage.setItem("tallyHolder", JSON.stringify(storageObject));
   return true;
 }
 
+function setCurrentId(id) {
+  const storage = localStorage.getItem("tallyHolder");
+  const storageObject = JSON.parse(storage);
+  storageObject.current = id;
+  localStorage.setItem("tallyHolder", JSON.stringify(storageObject));
+}
+
 function initLocalStorage() {
   if (localStorage.getItem("tallyHolder") === null) {
-    localStorage.setItem("tallyHolder", JSON.stringify({}));
+    localStorage.setItem("tallyHolder", JSON.stringify({
+      tallies: {},
+      current: null,
+    }));
   }
   let storage = JSON.parse(localStorage.getItem("tallyHolder"));
-  if (Object.keys(storage).length === 0) {
-    newLocalStorageSettings();
+  let id;
+  if (Object.keys(storage.tallies).length === 0) {
+    id = newLocalStorageSettings();
+    setCurrentId(id);
+  } else {
+    if (!storage.current) {
+      storage.current = Object.keys(storage.tallies)[0]; // select first tally if no current
+      setCurrentId(storage.current);
+    }
+    id = storage.current;
   }
   storage = JSON.parse(localStorage.getItem("tallyHolder"));
-  const id = Object.keys(storage)[0];
   return id;
 }
 
 function loadLocalStorage(id) {
   const storage = localStorage.getItem("tallyHolder");
   const storageObject = JSON.parse(storage);
-  const settings = storageObject[id];
+  const settings = storageObject.tallies[id];
   return settings;
 }
 
 function saveLocalStorage(settings, id) {
   const storage = localStorage.getItem("tallyHolder");
-  if (storage === null) {
-    return false; // no storage
-  }
   const storageObject = JSON.parse(storage);
-  if (!storageObject.hasOwnProperty(id)) {
+  const tallies = storageObject.tallies;
+  if (!tallies.hasOwnProperty(id)) {
     return false; // invalid id
   }
-  storageObject[id] = settings;
+  tallies[id] = settings;
   localStorage.setItem("tallyHolder", JSON.stringify(storageObject));
   return true;
 }
@@ -94,6 +111,14 @@ function main() {
   const tallySelect = document.getElementById("tallySelect");
   const tallyNew = document.getElementById("tallyNew");
   const tallyDelete = document.getElementById("tallyDelete");
+  const exportAll = document.getElementById("exportAll");
+  const importAll = document.getElementById("importAll");
+  
+  const exportMenu = document.getElementById("exportTalliesMenu");
+  const importMenu = document.getElementById("importTalliesMenu");
+  
+  const copyExport = document.getElementById("copyExport");
+  const downloadExport = document.getElementById("downloadExport");
   
   // variables
   
@@ -175,7 +200,8 @@ function main() {
     
     // get storage
     const storage = JSON.parse(localStorage.getItem("tallyHolder"));
-    const pairs = Object.entries(storage);
+    const tallies = storage.tallies;
+    const pairs = Object.entries(tallies);
     console.log(pairs);
     
     // create options
@@ -570,6 +596,7 @@ function main() {
       const newSettings = loadLocalStorage(selectedId);
       loadSettings(newSettings);
       currentSettingsId = selectedId;
+      setCurrentId(selectedId);
     });
     
     tallyNew.addEventListener("click", () => {
@@ -585,6 +612,8 @@ function main() {
       
       // update select
       updateTallySelect();
+      
+      setCurrentId(newId);
     });
     
     tallyDelete.addEventListener("click", () => {
@@ -600,16 +629,69 @@ function main() {
       // delete
       deleteTally(currentSettingsId);
       const storage = JSON.parse(localStorage.getItem("tallyHolder"));
-      if (Object.keys(storage).length === 0) {
+      const tallies = storage.tallies;
+      if (Object.keys(tallies).length === 0) {
         // no more tallies, create a new one
         currentSettingsId = newLocalStorageSettings();
       } else {
         // select the first tally
-        currentSettingsId = Object.keys(storage)[0];
+        currentSettingsId = Object.keys(tallies)[0];
       }
       const settings = loadLocalStorage(currentSettingsId);
       loadSettings(settings);
       updateTallySelect();
+      setCurrentId(currentSettingsId);
+    });
+    
+    exportAll.addEventListener("click", () => {
+      exportMenu.classList.add("active");
+    });
+    
+    importAll.addEventListener("click", () => {
+      importMenu.classList.add("active");
+    });
+    
+    exportMenu.addEventListener("click", (event) => {
+      // hide menu if clicked outside
+      if (event.target === exportMenu) {
+        exportMenu.classList.remove("active");
+      }
+    });
+    
+    importMenu.addEventListener("click", (event) => {
+      // hide menu if clicked outside
+      if (event.target === importMenu) {
+        importMenu.classList.remove("active");
+      }
+    });
+    
+    copyExport.addEventListener("click", () => {
+      const storage = localStorage.getItem("tallyHolder");
+      
+      // copy to clipboard
+      navigator.clipboard.writeText(storage);
+      
+      // show success message
+      alert("Copied to clipboard.");
+    });
+    
+    downloadExport.addEventListener("click", () => {
+      const storage = localStorage.getItem("tallyHolder");
+      
+      // create a blob
+      const blob = new Blob([storage], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      
+      // create a link and click it
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "tallyHolder.json";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // revoke the URL
+      URL.revokeObjectURL(url);
     });
   }
   
