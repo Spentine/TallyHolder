@@ -1,3 +1,78 @@
+// handle local storage
+function generateRandomId() {
+  const chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+/";
+  const length = 16;
+  let id = "";
+  for (let i = 0; i < length; i++) {
+    id += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return id;
+}
+
+function newLocalStorageSettings(settings={
+  count: 0,
+  increment: 1,
+  decrement: 1,
+  name: null
+}) {
+  const storage = localStorage.getItem("tallyHolder");
+  const storageObject = JSON.parse(storage);
+  const id = generateRandomId();
+  
+  if (settings.name === null) {
+    settings.name = "Tally " + id.substring(0, 6);
+  }
+  
+  storageObject[id] = settings;
+  localStorage.setItem("tallyHolder", JSON.stringify(storageObject));
+  return id;
+}
+
+function deleteTally(id) {
+  const storage = localStorage.getItem("tallyHolder");
+  const storageObject = JSON.parse(storage);
+  if (!storageObject.hasOwnProperty(id)) {
+    return false; // invalid id
+  }
+  delete storageObject[id];
+  localStorage.setItem("tallyHolder", JSON.stringify(storageObject));
+  return true;
+}
+
+function initLocalStorage() {
+  if (localStorage.getItem("tallyHolder") === null) {
+    localStorage.setItem("tallyHolder", JSON.stringify({}));
+  }
+  let storage = JSON.parse(localStorage.getItem("tallyHolder"));
+  if (Object.keys(storage).length === 0) {
+    newLocalStorageSettings();
+  }
+  storage = JSON.parse(localStorage.getItem("tallyHolder"));
+  const id = Object.keys(storage)[0];
+  return id;
+}
+
+function loadLocalStorage(id) {
+  const storage = localStorage.getItem("tallyHolder");
+  const storageObject = JSON.parse(storage);
+  const settings = storageObject[id];
+  return settings;
+}
+
+function saveLocalStorage(settings, id) {
+  const storage = localStorage.getItem("tallyHolder");
+  if (storage === null) {
+    return false; // no storage
+  }
+  const storageObject = JSON.parse(storage);
+  if (!storageObject.hasOwnProperty(id)) {
+    return false; // invalid id
+  }
+  storageObject[id] = settings;
+  localStorage.setItem("tallyHolder", JSON.stringify(storageObject));
+  return true;
+}
+
 function main() {
   console.log("Script loaded successfully");
   
@@ -5,18 +80,28 @@ function main() {
   
   const topBar = document.getElementById("top");
   const bottomBar = document.getElementById("bottom");
+  
   const tallyElement = document.getElementById("tally");
   const countElement = document.getElementById("tally-count");
+  
   const countInput = document.getElementById("countInput");
   const incrementInput = document.getElementById("incrementInput");
   const decrementInput = document.getElementById("decrementInput");
+  const nameInput = document.getElementById("nameInput");
+  
   const title = document.getElementById("title");
+  
+  const tallySelect = document.getElementById("tallySelect");
+  const tallyNew = document.getElementById("tallyNew");
+  const tallyDelete = document.getElementById("tallyDelete");
   
   // variables
   
   let tallyCount = 0;
   let tallyIncrement = 1; // default increment value
   let tallyDecrement = 1; // default decrement value
+  let tallyName = "Tally"; // default name for the tally
+  let currentSettingsId = null;
   
   const barPositions = {
     top: {
@@ -43,6 +128,72 @@ function main() {
   const getHeight = function() {
     return document.body.clientHeight || window.innerHeight;
   };
+  
+  // localstorage
+  
+  let id = initLocalStorage();
+  let settings = loadLocalStorage(id);
+  loadSettings(settings);
+  currentSettingsId = id;
+  
+  function loadSettings(settings) {
+    tallyCount = settings.count || 0;
+    tallyIncrement = settings.increment || 1;
+    tallyDecrement = settings.decrement || 1;
+    tallyName = settings.name || "Tally";
+    
+    updateCount(tallyCount, false);
+    incrementInput.value = tallyIncrement;
+    decrementInput.value = tallyDecrement;
+    nameInput.value = tallyName;
+  }
+  
+  function saveSettings() {
+    const settings = {
+      count: tallyCount,
+      increment: tallyIncrement,
+      decrement: tallyDecrement,
+      name: tallyName
+    };
+    
+    if (currentSettingsId === null) {
+      currentSettingsId = newLocalStorageSettings(settings);
+    } else {
+      saveLocalStorage(settings, currentSettingsId);
+    }
+  }
+  
+  function valueUpdated() {
+    saveSettings();
+  }
+  
+  function updateTallySelect() {
+    // clear existing options
+    while (tallySelect.firstChild) {
+      tallySelect.removeChild(tallySelect.firstChild);
+    }
+    
+    // get storage
+    const storage = JSON.parse(localStorage.getItem("tallyHolder"));
+    const pairs = Object.entries(storage);
+    console.log(pairs);
+    
+    // create options
+    pairs.forEach(([id, settings]) => {
+      console.log(settings.name);
+      const option = document.createElement("option");
+      option.value = id;
+      option.textContent = `${settings.name}`;
+      tallySelect.appendChild(option);
+    });
+    
+    // select current settings
+    if (currentSettingsId !== null) {
+      tallySelect.value = currentSettingsId;
+    } else {
+      tallySelect.value = pairs[0][0]; // select first option if no current settings
+    }
+  }
   
   function getPositions() {
     // get viewport height
@@ -92,15 +243,17 @@ function main() {
     countElement.style.fontSize = `${newFontSize}px`;
   }
   
-  function updateCount(count) {
+  function updateCount(count, forceUpdate=true) {
     tallyCount = count;
     countElement.textContent = tallyCount;
     countInput.value = tallyCount;
-    title.textContent = tallyCount + " | Current Tally";
+    title.textContent = tallyCount + " | " + tallyName;
     resizeCount();
+    if (forceUpdate) valueUpdated();
   }
   
   function addInteractivity() {
+    
     // mouse
     let dragType = null;
     let dragOriginalStatus = null;
@@ -335,7 +488,10 @@ function main() {
     
     // keyboard
     document.addEventListener("keydown", (event) => {
-      console.log(event.key);
+      // check if there is a selection
+      const selection = window.getSelection();
+      if (selection.focusNode) return; // the user is probably typing in an input field
+      
       if (
         event.key === "ArrowUp" ||
         event.key === " " ||
@@ -370,6 +526,7 @@ function main() {
       const value = parseFloat(event.target.value, 10);
       if (!isNaN(value) && value > 0) {
         tallyIncrement = value;
+        valueUpdated();
       } else {
         incrementInput.value = tallyIncrement;
       }
@@ -379,9 +536,80 @@ function main() {
       const value = parseFloat(event.target.value, 10);
       if (!isNaN(value) && value > 0) {
         tallyDecrement = value;
+        valueUpdated();
       } else {
         decrementInput.value = tallyDecrement;
       }
+    });
+    
+    nameInput.addEventListener("change", (event) => {
+      const value = event.target.value.trim();
+      if (value.length > 0) {
+        tallyName = value;
+        valueUpdated();
+        title.textContent = tallyCount + " | " + tallyName;
+        
+        // find the current option in the select
+        const currentOption = Array.from(tallySelect.options).find(option => option.value === currentSettingsId);
+        if (currentOption) {
+          currentOption.textContent = tallyName; // update the option text
+        }
+      } else {
+        nameInput.value = tallyName; // reset to current name if invalid input
+      }
+    });
+    
+    tallySelect.addEventListener("change", (event) => {
+      const selectedId = event.target.value;
+      if (selectedId === currentSettingsId) return; // no change
+      
+      // save current settings
+      saveSettings();
+      
+      // load new settings
+      const newSettings = loadLocalStorage(selectedId);
+      loadSettings(newSettings);
+      currentSettingsId = selectedId;
+    });
+    
+    tallyNew.addEventListener("click", () => {
+      // save current settings
+      saveSettings();
+      
+      // create new settings
+      const newId = newLocalStorageSettings();
+      currentSettingsId = newId;
+      
+      const settings = loadLocalStorage(newId);
+      loadSettings(settings);
+      
+      // update select
+      updateTallySelect();
+    });
+    
+    tallyDelete.addEventListener("click", () => {
+      // alert
+      if (
+        !confirm(
+          "Are you sure you want to delete this tally? This action cannot be undone."
+        )
+      ) {
+        return; // user cancelled
+      }
+      
+      // delete
+      deleteTally(currentSettingsId);
+      const storage = JSON.parse(localStorage.getItem("tallyHolder"));
+      if (Object.keys(storage).length === 0) {
+        // no more tallies, create a new one
+        currentSettingsId = newLocalStorageSettings();
+      } else {
+        // select the first tally
+        currentSettingsId = Object.keys(storage)[0];
+      }
+      const settings = loadLocalStorage(currentSettingsId);
+      loadSettings(settings);
+      updateTallySelect();
     });
   }
   
@@ -436,6 +664,8 @@ function main() {
   updateCount(tallyCount);
   
   addInteractivity();
+  
+  updateTallySelect();
 }
 
 if (document.readyState === "loading") {

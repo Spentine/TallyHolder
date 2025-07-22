@@ -6,6 +6,7 @@
     --bar-background-color: #808080;
     --drag-background-color: #909090;
     --input-background-color: #909090;
+    --button-hover: #b0b0b0;
     --text-color: #000000;
     --hr-color: #d0d0d0;
     --a-color: #203080;
@@ -18,6 +19,7 @@
     --bar-background-color: #303030;
     --drag-background-color: #404040;
     --input-background-color: #404040;
+    --button-hover: #505050;
     --text-color: #ffffff;
     --hr-color: #505050;
     --a-color: #a0b0f0;
@@ -32,7 +34,7 @@ html, body {
 }
 
 body {
-  width: 100vw;
+  width: 100dvw;
   height: 100dvh;
   
   background-color: var(--background-color);
@@ -73,7 +75,7 @@ hr {
   margin: 1em 0;
 }
 
-input {
+input, select, button {
   font-family: inherit;
   font-size: inherit;
   color: inherit;
@@ -83,6 +85,10 @@ input {
   border-radius: 2px;
   
   margin: 2px;
+}
+
+button:hover {
+  background-color: var(--button-hover);
 }
 
 /* Tally Center */
