@@ -9,6 +9,7 @@ function main() {
   const countElement = document.getElementById("tally-count");
   const countInput = document.getElementById("countInput");
   const incrementInput = document.getElementById("incrementInput");
+  const title = document.getElementById("title");
   
   // variables
   
@@ -93,6 +94,7 @@ function main() {
     tallyCount = count;
     countElement.textContent = tallyCount;
     countInput.value = tallyCount;
+    title.textContent = tallyCount + " | Current Tally";
     resizeCount();
   }
   
@@ -250,6 +252,9 @@ function main() {
           clientY: touch.clientY
         });
         mouseDown(mouseEvent, "touch");
+        if (draggedBar !== null) {
+          event.preventDefault(); // prevent default touch behavior
+        }
       }
     }
     function touchDrag(event) {
@@ -260,6 +265,9 @@ function main() {
           clientY: touch.clientY
         });
         mouseDrag(mouseEvent, "touch");
+        if (draggedBar !== null) {
+          event.preventDefault(); // prevent default touch behavior
+        } 
       }
     }
     function touchUp(event) {
