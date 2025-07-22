@@ -9,12 +9,14 @@ function main() {
   const countElement = document.getElementById("tally-count");
   const countInput = document.getElementById("countInput");
   const incrementInput = document.getElementById("incrementInput");
+  const decrementInput = document.getElementById("decrementInput");
   const title = document.getElementById("title");
   
   // variables
   
   let tallyCount = 0;
   let tallyIncrement = 1; // default increment value
+  let tallyDecrement = 1; // default decrement value
   
   const barPositions = {
     top: {
@@ -168,6 +170,36 @@ function main() {
         Math.max(event.clientY - relativeY, min),
         max
       );
+      
+      // close opposite bar if it's too close
+      const changeDistance = 16;
+      const distance = (
+        barPositions.bottom.current // top of bottom bar
+        - (barPositions.top.current + barPositions.top.height) // bottom of top bar
+      );
+      if (draggedBar === "top") {
+        if (barPositions.bottom.status !== "closed") {
+          barPositions.bottom.status = "non-move open"; // open but don't move it
+          barPositions.bottom.current = Math.max(
+            Math.min(
+              (barPositions.top.current + barPositions.top.height) + changeDistance,
+              barPositions.bottom.closedPosition
+            ),
+            barPositions.bottom.openPosition
+          );
+        }
+      } else if (draggedBar === "bottom") {
+        if (barPositions.top.status !== "closed") {
+          barPositions.top.status = "non-move open"; // open but don't move it
+          barPositions.top.current = Math.min(
+            Math.max(
+              barPositions.bottom.current - changeDistance - barPositions.top.height,
+              barPositions.top.closedPosition
+            ),
+            barPositions.top.openPosition
+          );
+        }
+      }
     }
     /**
      * this will have interesting functionality
@@ -201,7 +233,7 @@ function main() {
             tallyCount += tallyIncrement;
           } else {
             // swipe down
-            tallyCount -= tallyIncrement;
+            tallyCount -= tallyDecrement;
           }
         }
         
@@ -226,14 +258,33 @@ function main() {
         const closedPosition = barPositions[draggedBar].closedPosition;
         
         // get distances
-        const distanceToOpen = Math.abs(currentPosition - openPosition);
-        const distanceToClosed = Math.abs(currentPosition - closedPosition);
+        let distanceToOpen = Math.abs(currentPosition - openPosition);
+        let distanceToClosed = Math.abs(currentPosition - closedPosition);
+        
+        const weight = 4;
+        if (dragOriginalStatus === "open") {
+          // weight closed position more
+          distanceToClosed /= weight;
+        } else if (dragOriginalStatus === "closed") {
+          // weight open position more
+          distanceToOpen /= weight;
+        }
         
         if (distanceToOpen < distanceToClosed) {
           barPositions[draggedBar].status = "open";
         } else {
           barPositions[draggedBar].status = "closed";
         }
+      }
+      
+      if (draggedBar === "top" && barPositions.bottom.status !== "closed") {
+        barPositions.bottom.status = (
+          barPositions.top.status === "open" ? "closed" : "open"
+        );
+      } else if (draggedBar === "bottom" && barPositions.top.status !== "closed") {
+        barPositions.top.status = (
+          barPositions.bottom.status === "open" ? "closed" : "open"
+        );
       }
       
       draggedBar = null;
@@ -298,7 +349,7 @@ function main() {
         event.key === "Backspace" ||
         event.key === "s"
       ) {
-        tallyCount -= tallyIncrement;
+        tallyCount -= tallyDecrement;
         updateCount(tallyCount);
       }
     });
@@ -323,6 +374,15 @@ function main() {
         incrementInput.value = tallyIncrement;
       }
     });
+    
+    decrementInput.addEventListener("change", (event) => {
+      const value = parseFloat(event.target.value, 10);
+      if (!isNaN(value) && value > 0) {
+        tallyDecrement = value;
+      } else {
+        decrementInput.value = tallyDecrement;
+      }
+    });
   }
   
   let lastFrame = Date.now();
@@ -334,7 +394,8 @@ function main() {
     getPositions();
     
     // frame rate correction
-    const portion = 1 - Math.pow(0.00001, (1/fps));
+    const topPortion = 1 - Math.pow(0.00001, (1/fps));
+    const bottomPortion = 1 - Math.pow(0.001, (1/fps));
     
     const tween = function(current, target, portion) {
       return current * (1 - portion) + target * portion;
@@ -347,8 +408,8 @@ function main() {
     } else if (barPositions.top.status === "open") {
       target = barPositions.top.openPosition;
     }
-    if (barPositions.top.status !== null) {
-      barPositions.top.current = tween(barPositions.top.current, target, portion);
+    if (target !== null) {
+      barPositions.top.current = tween(barPositions.top.current, target, topPortion);
     }
     
     target = null;
@@ -357,8 +418,8 @@ function main() {
     } else if (barPositions.bottom.status === "open") {
       target = barPositions.bottom.openPosition;
     }
-    if (barPositions.bottom.status !== null) {
-      barPositions.bottom.current = tween(barPositions.bottom.current, target, portion);
+    if (target !== null) {
+      barPositions.bottom.current = tween(barPositions.bottom.current, target, bottomPortion);
     }
     
     resizeCount();

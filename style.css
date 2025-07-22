@@ -78,6 +78,11 @@ input {
   font-size: inherit;
   color: inherit;
   background-color: var(--input-background-color);
+  
+  border: 1px solid var(--hr-color);
+  border-radius: 2px;
+  
+  margin: 2px;
 }
 
 /* Tally Center */
@@ -104,7 +109,6 @@ input {
 .drag {
   background-color: var(--drag-background-color);
   height: 3em;
-  
 }
 
 .drag-icon-container {
@@ -143,4 +147,8 @@ input {
 
 .content {
   padding: 8px;
+}
+
+#bottom {
+  min-height: calc(100dvh - 3em - 16px);
 }
