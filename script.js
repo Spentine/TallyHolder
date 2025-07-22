@@ -166,6 +166,8 @@ function main() {
   currentSettingsId = id;
   
   function loadSettings(settings) {
+    console.log("Loading Settings:", settings);
+    
     tallyCount = settings.count || 0;
     tallyIncrement = settings.increment || 1;
     tallyDecrement = settings.decrement || 1;
@@ -206,11 +208,9 @@ function main() {
     const storage = JSON.parse(localStorage.getItem("tallyHolder"));
     const tallies = storage.tallies;
     const pairs = Object.entries(tallies);
-    console.log(pairs);
     
     // create options
     pairs.forEach(([id, settings]) => {
-      console.log(settings.name);
       const option = document.createElement("option");
       option.value = id;
       option.textContent = `${settings.name}`;
