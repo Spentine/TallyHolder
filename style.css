@@ -8,6 +8,7 @@
     --input-background-color: #909090;
     --text-color: #000000;
     --hr-color: #d0d0d0;
+    --a-color: #203080;
   }
 }
 
@@ -19,6 +20,7 @@
     --input-background-color: #404040;
     --text-color: #ffffff;
     --hr-color: #505050;
+    --a-color: #a0b0f0;
   }
 }
 
@@ -51,6 +53,19 @@ p {
 h2 {
   text-align: center;
   margin: 0 0 0.1em 0;
+}
+
+a {
+  color: var(--a-color);
+  text-decoration: underline;
+}
+
+a:hover {
+  font-weight: bold;
+}
+
+a:visited {
+  color: var(--a-color);
 }
 
 hr {

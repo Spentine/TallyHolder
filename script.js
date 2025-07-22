@@ -282,6 +282,27 @@ function main() {
     document.addEventListener("touchmove", touchDrag);
     document.addEventListener("touchend", touchUp);
     
+    // keyboard
+    document.addEventListener("keydown", (event) => {
+      console.log(event.key);
+      if (
+        event.key === "ArrowUp" ||
+        event.key === " " ||
+        event.key === "Enter" ||
+        event.key === "w"
+      ) {
+        tallyCount += tallyIncrement;
+        updateCount(tallyCount);
+      } else if (
+        event.key === "ArrowDown" ||
+        event.key === "Backspace" ||
+        event.key === "s"
+      ) {
+        tallyCount -= tallyIncrement;
+        updateCount(tallyCount);
+      }
+    });
+    
     // add interactivity for inputs
     
     countInput.addEventListener("change", (event) => {
