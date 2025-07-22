@@ -80,15 +80,20 @@
       <div class="overlay-content">
         <h2> Export Tallies </h2>
         <p> Export your tallies in a manner most preferable. </p>
-        <button id="copyExport"> Copy JSON to Clipboard </button>
-        <button id="downloadExport"> Download as JSON </button>
+        <div class="center-items">
+          <button id="copyExport"> Copy JSON to Clipboard </button>
+          <button id="downloadExport"> Download as JSON </button>
+        </div>
       </div>
     </div>
     <div id="importTalliesMenu" class="overlay-menu">
       <div class="overlay-content">
         <h2> Import Tallies </h2>
         <p> Import tallies in a manner that suits your needs. </p>
-        <!-- insert something later -->
+        <div class="center-items">
+          <button id="importFromClipboard"> Import from Clipboard </button>
+          <button id="importFromFile"> Import from File </button>
+        <input type="file" id="importFileInput" accept=".json">
       </div>
     </div>
   </body>

@@ -194,3 +194,14 @@ button:hover {
   padding: 16px;
   background: rgba(0, 0, 0, 0.8);
 }
+
+#importFileInput {
+  display: none;
+}
+
+.center-items {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}

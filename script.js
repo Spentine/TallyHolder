@@ -120,6 +120,10 @@ function main() {
   const copyExport = document.getElementById("copyExport");
   const downloadExport = document.getElementById("downloadExport");
   
+  const importFromClipboard = document.getElementById("importFromClipboard");
+  const importFromFile = document.getElementById("importFromFile");
+  const importFileInput = document.getElementById("importFileInput");
+  
   // variables
   
   let tallyCount = 0;
@@ -692,6 +696,59 @@ function main() {
       
       // revoke the URL
       URL.revokeObjectURL(url);
+    });
+    
+    function importTallies(tallies) {
+      // should add tallies to already-existing list
+      const storage = JSON.parse(localStorage.getItem("tallyHolder"));
+      const existingTallies = storage.tallies;
+      for (const [id, settings] of Object.entries(tallies)) {
+        if (existingTallies.hasOwnProperty(id)) {
+          // if the id already exists, generate new id
+          const newId = generateRandomId();
+          alert(`Tally with ID ${id} already exists. Generated new ID: ${newId}`);
+          existingTallies[newId] = settings;
+        } else {
+          // otherwise, add a new tally
+          existingTallies[id] = settings;
+        }
+      }
+      // save the updated storage
+      localStorage.setItem("tallyHolder", JSON.stringify(storage));
+      // update the select
+      updateTallySelect();
+    }
+    
+    importFromClipboard.addEventListener("click", async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        const data = JSON.parse(text);
+        importTallies(data.tallies);
+        alert("Imported tallies successfully.");
+      } catch (error) {
+        alert("Failed to import from clipboard: " + error.message);
+      }
+    });
+    
+    importFromFile.addEventListener("click", () => {
+      importFileInput.click(); // trigger file input click
+      
+      importFileInput.addEventListener("change", async (event) => {
+        const file = event.target.files[0];
+        if (!file) {
+          alert("No file selected.");
+          return;
+        }
+        
+        try {
+          const text = await file.text();
+          const data = JSON.parse(text);
+          importTallies(data.tallies);
+          alert("Imported tallies successfully.");
+        } catch (error) {
+          alert("Failed to import from file: " + error.message);
+        }
+      });
     });
   }
   
